@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "client",
+    "Client",
     "server"
   ],
   "scripts": {
-    "build": "npm run build --workspace=client"
+    "build": "npm run build --workspace=Client"
   },
   "engines": {
     "node": "22.x"

@@ -1,5 +1,5 @@
 {
-  "outputDirectory": "client/dist",
+  "outputDirectory": "Client/dist",
   "cleanUrls": true,
   "rewrites": [
     {
