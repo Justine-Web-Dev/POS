@@ -7,9 +7,5 @@ export default defineConfig({
   plugins: [react(),
     tailwindcss()
   ],
-  build: {
-    // Ensures a clean, standard production build matrix
-    minify: 'esbuild'
-  },
   base: process.env.VITE_API_URL || "/client"
 })
