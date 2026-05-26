@@ -1,6 +1,6 @@
 import express from "express"
 import { getAllUsers,createUser,add_table,update_table_status,get_all_table } from "../../controllers/Admin/admin.controllers.js"
-import { add_category,get_menu_item,add_menu } from "../../controllers/Admin/admin.category.controller.js"
+import { add_category,get_menu_item,add_menu, get_category_by_type } from "../../controllers/Admin/admin.category.controller.js"
 import { authMiddleWare } from "../../middleware/authMiddleware.js"
 
 const router = express.Router()
@@ -18,5 +18,7 @@ router.post('/admin/add-category/',add_category)
 
 router.get('/admin/get-menu/',get_menu_item)
 router.post('/admin/add-menu/',add_menu)
+
+router.get('/admin/get-category-type/',get_category_by_type)
 
 export default router
