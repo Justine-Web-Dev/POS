@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { api } from "../api/api";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [formData,setFormData] = useState({username: "", password: ""})
+
+  const navigate = useNavigate()
 
   const handleChange = (e) =>{
     const {name,value} = e.target
@@ -12,16 +15,22 @@ function Login() {
   const handleForm = async (e) =>{
     e.preventDefault()
     try {
-      const response = await api.post('/login-user/login',formData)
-
       if(!formData.username || !formData.password){
         return alert(response.error.message)
       }
 
+      const response = await api.post('/login-user/login',formData)
+
+      const data = response.data
+
       alert(response.data.message)
+      localStorage.setItem("token", data.token)
+
+      console.log(localStorage.getItem('token'))
 
       setFormData({username: "", password: ""})
 
+      navigate('/dashboard')
     } catch (error) {
       alert(error.response?.data.message)
     }

@@ -6,19 +6,19 @@ import { authMiddleWare } from "../../middleware/authMiddleware.js"
 const router = express.Router()
 
 //admin handle
-router.get('/admin/get-all-users', getAllUsers)
-router.post('/admin/create-user', createUser)
+router.get('/admin/get-all-users',authMiddleWare ,getAllUsers)
+router.post('/admin/create-user', authMiddleWare,createUser)
 
 //table create,read,update,
-router.post('/admin/create-table', add_table)
-router.get('/admin/read-table', get_all_table)
-router.put('/admin/update-table/:id', update_table_status)
+router.post('/admin/add-table',authMiddleWare, add_table)
+router.get('/admin/read-table', authMiddleWare, get_all_table)
+router.put('/admin/update-table/:id', authMiddleWare , update_table_status)
 
-router.post('/admin/add-category/',add_category)
+router.post('/admin/add-category/', authMiddleWare,add_category)
 
-router.get('/admin/get-menu/',get_menu_item)
-router.post('/admin/add-menu/',add_menu)
+router.get('/admin/get-menu/', authMiddleWare,get_menu_item)
+router.post('/admin/add-menu/', authMiddleWare,add_menu)
 
-router.get('/admin/get-category-type/',get_category_by_type)
+router.get('/admin/get-category-type/', authMiddleWare,get_category_by_type)
 
 export default router
