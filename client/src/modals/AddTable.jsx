@@ -20,7 +20,7 @@ function AddTable({ isOpen, onClose, onSuccess }) {
     setError('')
     try {
       await api.post('/api/users/admin/add-table', {
-        table_number: Number(tableNumber),
+        table_number: tableNumber,
         capacity: Number(capacity)
       })
       // Reset form
@@ -83,10 +83,10 @@ function AddTable({ isOpen, onClose, onSuccess }) {
               Table Number
             </label>
             <input
-              type="number"
+              type="text"
               min="1"
               required
-              placeholder="e.g. 5"
+              placeholder="e.g. Table 1"
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               className="w-full bg-white border border-slate-200 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 transition-colors placeholder-slate-300 text-slate-800 shadow-xs"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { api } from '../../api/api'
 import AddTable from '../../modals/AddTable'
+import UpdateStatusModal from '../../modals/UpdateStatusModal'
 
 const statusStyles = {
   Available: {
@@ -38,6 +39,13 @@ function Table() {
   const [selectedStatus, setSelectedStatus] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [selectedTableForUpdate, setSelectedTableForUpdate] = useState(null)
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+
+  const handleEditStatus = (table) => {
+    setSelectedTableForUpdate(table)
+    setIsUpdateModalOpen(true)
+  }
 
   const getNormalizedStatus = (status) => {
     if (!status) return 'Available'
@@ -185,6 +193,7 @@ function Table() {
                 return (
                   <div
                     key={table.id || table.table_number}
+                    onClick={() => handleEditStatus(table)}
                     className={`aspect-[1.18] rounded-xl border-2 ${style.border} ${style.bg} p-3 sm:p-4 flex flex-col justify-between transition-all duration-300 cursor-pointer shadow-2xs active:scale-[0.97]`}
                   >
                     {/* Top Row: Status Indicator */}
@@ -209,7 +218,6 @@ function Table() {
                         </svg>
                         {table.capacity} Pax
                       </span>
-                      <span className="text-blue-600 hover:text-blue-700 hover:underline">Edit Status</span>
                     </div>
                   </div>
                 )
@@ -309,6 +317,16 @@ function Table() {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
         onSuccess={fetchTables} 
+      />
+
+      <UpdateStatusModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => {
+          setIsUpdateModalOpen(false)
+          setSelectedTableForUpdate(null)
+        }}
+        onSuccess={fetchTables}
+        table={selectedTableForUpdate}
       />
     </div>
   )
