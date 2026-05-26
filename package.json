@@ -2,7 +2,11 @@
   "name": "pos-system-root",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "build": "cd client && npm install && npm run build"
+    "build": "npm run build --workspace=client"
   }
 }
