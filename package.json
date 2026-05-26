@@ -8,5 +8,8 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=client"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
