@@ -8,3 +8,4 @@ export default defineConfig({
     tailwindcss()
   ],
 })
+// Force a clean rebuild on Vercel
