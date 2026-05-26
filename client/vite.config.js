@@ -7,5 +7,8 @@ export default defineConfig({
   plugins: [react(),
     tailwindcss()
   ],
+  builder: {
+    bundle: false
+  }
 })
 // Force a clean rebuild on Vercel
