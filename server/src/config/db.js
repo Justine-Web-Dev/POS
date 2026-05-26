@@ -5,20 +5,12 @@ dotenv.config()
 
 const {Pool} = pkg
 
-export const pool = process.env.DATABASE_URL
-  ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false // This is required for secure cloud databases like Render
-      }
-    })
-  : new Pool({
-      user: process.env.PG_USER,
-      password: process.env.PG_PASSWORD,
-      host: process.env.PG_HOST,
-      port: process.env.PG_PORT,
-      database: process.env.PG_DB
-    })
+export const pool =  new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? {rejectUnauthorized : false} : false
+  
+})
+      
 
 pool.query('SELECT NOW()',(err,res)=>{
   if(err){
