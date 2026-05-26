@@ -43,6 +43,16 @@ export const createUser = async (req,res) =>{
   }
 }
 
+//tbl_table controller
+export const get_all_table = async (req,res) =>{
+  try {
+    const queryAllTable = await pool.query('SELECT * FROM tbl_table ORDER BY id ASC')
+    return res.json(queryAllTable.rows)
+  } catch (error) {
+    res.status(500).json({message: error.message})
+  }
+}
+
 export const add_table = async (req,res) =>{
   try {
     const {table_number,capacity} = req.body
@@ -50,6 +60,20 @@ export const add_table = async (req,res) =>{
     const newTable = await pool.query('INSERT INTO tbl_table (table_number,capacity) VALUES ($1,$2)',[table_number,capacity])
 
     return res.json({message: "Table added successfully" , data: newTable.rows})
+
+  } catch (error) {
+    res.status(500).json({message: error.message})
+  }
+}
+
+export const update_table_status = async (req,res) =>{
+  try {
+    const {id} = req.params
+    const {status} = req.body
+
+    const queryUpdateStatus = await pool.query('UPDATE tbl_table SET status=$1 WHERE id=$2', [status,id])
+
+    return res.json({message:"Table updated successfully"})
 
   } catch (error) {
     res.status(500).json({message: error.message})
