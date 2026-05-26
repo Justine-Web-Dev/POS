@@ -7,5 +7,5 @@ export default defineConfig({
   plugins: [react(),
     tailwindcss()
   ],
-  base: process.env.VITE_API_URL || "/client"
+  base: "/"
 })

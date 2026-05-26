@@ -55,6 +55,7 @@ function Login() {
             placeholder="Username"
             value={formData.username}
             onChange={handleChange}
+            required
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -73,6 +74,7 @@ function Login() {
             onChange={handleChange}
             value={formData.password}
             placeholder="Password"
+            required
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
