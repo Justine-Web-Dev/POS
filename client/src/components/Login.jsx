@@ -16,14 +16,14 @@ function Login() {
     e.preventDefault()
     try {
       if(!formData.username || !formData.password){
-        return alert(response.error.message)
+        return alert("Please fill in all fields.")
       }
 
       const response = await api.post('/login-user/login',formData)
 
       const data = response.data
 
-      alert(response.data.message)
+      alert(data.message)
       localStorage.setItem("token", data.token)
 
       console.log(localStorage.getItem('token'))
