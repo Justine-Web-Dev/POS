@@ -9,7 +9,7 @@ const app = express()
 
 app.use(express.json())
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://pos-client-7u1a-git-main-justine-rmairezs-projects.vercel.app'],
+  origin: ['http://localhost:5173', 'https://pos-client-7u1a-j7ztab7aa-justine-rmairezs-projects.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }))
