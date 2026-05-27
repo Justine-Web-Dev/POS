@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { api } from '../api/api'
+import { api } from '../api/api.js'
 
 function AddTable({ isOpen, onClose, onSuccess }) {
   const [tableNumber, setTableNumber] = useState('')

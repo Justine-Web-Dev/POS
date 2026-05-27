@@ -1,9 +1,9 @@
-import React from 'react'
 
-function POS() {
+
+function Pos() {
   return (
     <div>POS</div>
   )
 }
 
-export default POS
+export default Pos
