@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '../../api/api'
 import AddTable from '../../modals/AddTable'
 import UpdateStatusModal from '../../modals/UpdateStatusModal'
