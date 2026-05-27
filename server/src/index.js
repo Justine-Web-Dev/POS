@@ -9,7 +9,7 @@ const app = express()
 
 app.use(express.json())
 app.use(cors({
-  origin: 'http://localhost:5173'
+  origin: 'http://localhost:5173', 'https://pos-client-7u1a.vercel.app/'
 }))
 
 app.use("/api/users/", router)
