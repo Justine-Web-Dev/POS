@@ -19,20 +19,22 @@ function Login() {
         return alert("Please fill in all fields.")
       }
 
-      const response = await api.post('/login-user/login',formData)
-
+      const response = await api.post('/login-user/login', formData)
       const data = response.data
 
-      alert(data.message)
-      localStorage.setItem("token", data.token)
+      alert(data.message ?? "Login successful")
+      localStorage.setItem("token", data.token ?? "")
 
-      console.log(localStorage.getItem('token'))
+      if (!data.token) {
+        throw new Error("Login succeeded but token is missing from the response.")
+      }
 
-      setFormData({username: "", password: ""})
-
+      setFormData({ username: "", password: "" })
       navigate('/dashboard')
     } catch (error) {
-      console.log(error.response?.data.message)
+      const errorMessage = error.response?.data?.message || error.message || "Login failed"
+      alert(errorMessage)
+      console.error("Login error:", error)
     }
   }
 
