@@ -6,7 +6,7 @@ import { authMiddleWare } from "../../middleware/authMiddleware.js"
 const router = express.Router()
 
 //admin handle
-router.get('/admin/get-all-users' ,getAllUsers)
+router.get('/admin/get-all-users',authMiddleWare ,getAllUsers)
 router.post('/admin/create-user', authMiddleWare,createUser)
 
 //table create,read,update,
