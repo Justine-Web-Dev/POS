@@ -11,7 +11,7 @@ router.post('/admin/create-user', authMiddleWare,createUser)
 
 //table create,read,update,
 router.post('/admin/add-table',authMiddleWare, add_table)
-router.get('/admin/read-table', authMiddleWare, get_all_table)
+router.get('/admin/read-table', get_all_table)
 router.put('/admin/update-table/:id', authMiddleWare , update_table_status)
 
 router.post('/admin/add-category/', authMiddleWare,add_category)
