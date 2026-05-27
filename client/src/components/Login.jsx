@@ -19,7 +19,7 @@ function Login() {
         return alert("Please fill in all fields.")
       }
 
-      const response = await api.post('/login-user/login', formData)
+      const response = await api.post('/login-user/login/', formData)
       const data = response.data
 
       alert(data.message ?? "Login successful")

@@ -14,8 +14,8 @@ app.use(cors({
   credentials: true
 }))
 
-app.use("/api/users/", router)
-app.use("/login-user/",loginRouter)
+app.use("/api/users", router)
+app.use("/login-user",loginRouter)
 
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 5001
