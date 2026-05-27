@@ -17,7 +17,7 @@ app.use(cors({
 app.use("/api/users/", router)
 app.use("/login-user/",loginRouter)
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 5001
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
