@@ -41,10 +41,60 @@ function Table() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedTableForUpdate, setSelectedTableForUpdate] = useState(null)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [menuItems, setMenuItems] = useState([])
+  const [selectedTableForOrder, setSelectedTableForOrder] = useState(null)
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
+  const [orderCreatingId, setOrderCreatingId] = useState(null)
 
   const handleEditStatus = (table) => {
     setSelectedTableForUpdate(table)
     setIsUpdateModalOpen(true)
+  }
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await api.get('/api/users/admin/get-menu/')
+      setMenuItems(response.data || [])
+    } catch (error) {
+      console.error('Error fetching menu items:', error)
+    }
+  }
+
+  const openOrderModal = async (table, event) => {
+    event.stopPropagation()
+    setSelectedTableForOrder(table)
+    setIsOrderModalOpen(true)
+    if (menuItems.length === 0) {
+      await fetchMenuItems()
+    }
+  }
+
+  const handleCreateOrderFromMenu = async (menuItem) => {
+    if (!selectedTableForOrder?.id || !menuItem?.menu_id) return
+
+    try {
+      setOrderCreatingId(selectedTableForOrder.id)
+      const payload = {
+        table_id: selectedTableForOrder.id,
+        menu_item_id: menuItem.menu_id,
+        quantity: 1,
+        payment_status: 'Pending',
+        order_status: 'New'
+      }
+
+      const response = await api.post('/api/users/admin/add-order', payload)
+      const orderNumber = response.data.data.order_number
+      const itemName = response.data.menu_item?.name || menuItem.name
+      window.alert(`Order created for ${itemName}: ${orderNumber}`)
+      setIsOrderModalOpen(false)
+      setSelectedTableForOrder(null)
+      await fetchTables()
+    } catch (error) {
+      console.error('Failed to create order from menu:', error)
+      window.alert(error.response?.data?.message || 'Failed to create order')
+    } finally {
+      setOrderCreatingId(null)
+    }
   }
 
   const getNormalizedStatus = (status) => {
@@ -211,13 +261,22 @@ function Table() {
                     </div>
 
                     {/* Bottom Row: Capacity & Quick Action */}
-                    <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-semibold text-slate-400 border-t border-slate-100 pt-1.5 sm:pt-2">
-                      <span className="flex items-center gap-1.5 text-slate-500">
-                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                        </svg>
-                        {table.capacity} Pax
-                      </span>
+                    <div className="flex flex-col gap-2 border-t border-slate-100 pt-1.5 sm:pt-2">
+                      <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-semibold text-slate-400">
+                        <span className="flex items-center gap-1.5 text-slate-500">
+                          <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                          </svg>
+                          {table.capacity} Pax
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => openOrderModal(table, e)}
+                          className="rounded-full bg-slate-900 text-white text-[10px] px-2.5 py-1.5 hover:bg-slate-800 transition-colors"
+                        >
+                          Select Menu Item
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
@@ -328,6 +387,56 @@ function Table() {
         onSuccess={fetchTables}
         table={selectedTableForUpdate}
       />
+
+      {isOrderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Create Order from Menu</h2>
+                <p className="text-sm text-slate-500 mt-1">Table: {selectedTableForOrder?.table_number || selectedTableForOrder?.id}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOrderModalOpen(false)
+                  setSelectedTableForOrder(null)
+                }}
+                className="text-slate-500 hover:text-slate-900 text-sm"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              {menuItems.length === 0 ? (
+                <p className="text-sm text-slate-500">No menu items available.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {menuItems.map((item) => (
+                    <button
+                      key={item.menu_id}
+                      type="button"
+                      onClick={() => handleCreateOrderFromMenu(item)}
+                      className="rounded-3xl border border-slate-200 p-4 text-left hover:border-slate-300 hover:bg-slate-50 transition-colors"
+                      disabled={orderCreatingId === selectedTableForOrder?.id}
+                    >
+                      <div className="flex justify-between items-start gap-3">
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{item.name}</h3>
+                          <p className="text-sm text-slate-500 mt-1">{item.category_name || ''}</p>
+                        </div>
+                        <div className="text-right text-slate-900 font-bold">₱{item.price}</div>
+                      </div>
+                      <p className="mt-3 text-sm text-slate-500">{item.description}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
