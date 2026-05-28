@@ -139,29 +139,29 @@ function Pos() {
     }
 
     try {
-      setOrderLoading(true);
-      setStatusMessage("Sending order...");
-      
-      for (const item of cartItems) {
-        // Appended trailing slash to match the pattern your backend uses for endpoints
-        await api.post("/api/users/admin/add-order/", {
-          table_id: selectedTable.id,
-          menu_item_id: item.menu_id,
+      setOrderLoading(true)
+      setStatusMessage('Sending order...')
+
+      // Server now expects a single batch request with an items array
+      await api.post('/api/users/admin/add-order', {
+        table_id: selectedTable.id,
+        items: cartItems.map((item) => ({
+          id: item.menu_id,
           quantity: item.quantity,
-          payment_status: "Pending",
-          order_status: "New",
-        });
-      }
-      
+        })),
+        payment_status: 'Pending',
+        order_status: 'New',
+      })
+
       setStatusMessage(
-        `Order fired for ${cartItems.length} item${cartItems.length > 1 ? "s" : ""}.`,
-      );
-      setCartItems([]);
-      fetchTables();
+        `Order fired for ${cartItems.length} item${cartItems.length > 1 ? 's' : ''}.`,
+      )
+      setCartItems([])
+      fetchTables()
     } catch (error) {
-      console.error("Fire order network error details:", error);
-      const message = error.response?.data?.message || `Error ${error.response?.status || "Unknown"}: Failed to save order.`;
-      setStatusMessage(message);
+      console.error('Fire order error:', error)
+      const message = error.response?.data?.message || `Error ${error.response?.status ?? 'Unknown'}: Failed to fire order.`
+      setStatusMessage(message)
     } finally {
       setOrderLoading(false);
     }

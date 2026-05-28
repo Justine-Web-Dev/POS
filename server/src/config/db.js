@@ -5,18 +5,21 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-const isProduction = process.env.NODE_ENV === "production";
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim());
 
 export const pool = new Pool({
-  connectionString: isProduction ? process.env.DATABASE_URL : undefined,
+  // Prefer DATABASE_URL if provided (works for local + production).
+  // Falls back to discrete PG_* env vars for local Postgres.
+  connectionString: hasDatabaseUrl ? process.env.DATABASE_URL : undefined,
 
-  user: isProduction ? undefined : process.env.PG_USER,
-  password: isProduction ? undefined : process.env.PG_PASSWORD,
-  host: isProduction ? undefined : process.env.PG_HOST,
-  port: isProduction ? undefined : process.env.PG_PORT,
-  database: isProduction ? undefined : process.env.PG_DB,
+  user: hasDatabaseUrl ? undefined : process.env.PG_USER,
+  password: hasDatabaseUrl ? undefined : process.env.PG_PASSWORD,
+  host: hasDatabaseUrl ? undefined : process.env.PG_HOST,
+  port: hasDatabaseUrl ? undefined : process.env.PG_PORT,
+  database: hasDatabaseUrl ? undefined : process.env.PG_DB,
 
-  ssl: isProduction ? { rejectUnauthorized: false } : false
+  // Managed Postgres providers typically require SSL.
+  ssl: hasDatabaseUrl ? { rejectUnauthorized: false } : false
 });
 
 pool.query("SELECT NOW()", (err, res) => {

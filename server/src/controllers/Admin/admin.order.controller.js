@@ -2,7 +2,12 @@ import { pool } from "../../config/db.js";
 
 export const add_order = async (req, res) => {
   try {
-    const { table_id, cashier_id, items, payment_status, order_status } = req.body;
+    const { table_id, items, payment_status, order_status } = req.body;
+    const cashierId = req.user?.id;
+
+    if (!cashierId) {
+      return res.status(401).json({ message: 'Access denied. Invalid or missing token.' });
+    }
 
     if (!table_id) {
       return res.status(400).json({ message: 'table_id is required' });
@@ -53,7 +58,8 @@ export const add_order = async (req, res) => {
 
       const orderValues = [
         table_id,
-        cashier_id || null,
+        // Always use the authenticated user as the cashier.
+        cashierId,
         orderNumber,
         consolidated_total,
         payment_status || 'Pending',

@@ -51,24 +51,6 @@ function Table() {
     setIsUpdateModalOpen(true)
   }
 
-  const fetchMenuItems = async () => {
-    try {
-      const response = await api.get('/api/users/admin/get-menu/')
-      setMenuItems(response.data || [])
-    } catch (error) {
-      console.error('Error fetching menu items:', error)
-    }
-  }
-
-  const openOrderModal = async (table, event) => {
-    event.stopPropagation()
-    setSelectedTableForOrder(table)
-    setIsOrderModalOpen(true)
-    if (menuItems.length === 0) {
-      await fetchMenuItems()
-    }
-  }
-
   const handleCreateOrderFromMenu = async (menuItem) => {
     if (!selectedTableForOrder?.id || !menuItem?.menu_id) return
 
@@ -269,13 +251,6 @@ function Table() {
                           </svg>
                           {table.capacity} Pax
                         </span>
-                        <button
-                          type="button"
-                          onClick={(e) => openOrderModal(table, e)}
-                          className="rounded-full bg-slate-900 text-white text-[10px] px-2.5 py-1.5 hover:bg-slate-800 transition-colors"
-                        >
-                          Select Menu Item
-                        </button>
                       </div>
                     </div>
                   </div>
