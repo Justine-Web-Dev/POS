@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [formData,setFormData] = useState({username: "", password: ""})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const navigate = useNavigate()
 
@@ -14,6 +16,8 @@ function Login() {
 
   const handleForm = async (e) =>{
     e.preventDefault()
+    setLoading(true)
+    setError("")
     try {
       if(!formData.username || !formData.password){
         return alert("Please fill in all fields.")
@@ -33,8 +37,10 @@ function Login() {
       navigate('/dashboard')
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || "Login failed"
-      alert(errorMessage)
       console.error("Login error:", error)
+      setError(errorMessage)
+    }finally{
+      setLoading(false)
     }
   }
 
@@ -81,11 +87,13 @@ function Login() {
           />
         </div>
 
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
         <button
           type="submit"
           className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>

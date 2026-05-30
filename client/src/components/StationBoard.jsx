@@ -142,7 +142,7 @@ function StationBoard({
   };
 
   return (
-    <div className="w-full bg-white text-slate-700 font-sans">
+    <div className="w-full bg-white text-slate-700 font-sans p-12 rounded-[24px] border border-slate-100">
       <header className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
