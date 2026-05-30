@@ -24,7 +24,7 @@ router.post('/admin/add-menu/', authMiddleWare,add_menu)
 
 router.get('/admin/get-category-type/', authMiddleWare,get_category_by_type)
 
-router.get('/admin/get-orders/', get_orders)
+router.get('/admin/get-orders/', authMiddleWare,get_orders)
 
 
 export default router
