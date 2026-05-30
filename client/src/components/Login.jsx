@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { api } from "../api/api";
 import { useNavigate } from "react-router-dom";
+import LoginSuccesModal from "../modals/LoginSuccesModal";
 
 function Login() {
   const [formData,setFormData] = useState({username: "", password: ""})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [isLoginSuccessModalOpen, setIsLoginSuccessModalOpen] = useState(false)
 
   const navigate = useNavigate()
 
@@ -26,15 +28,13 @@ function Login() {
       const response = await api.post('/login-user/login/', formData)
       const data = response.data
 
-      alert(data.message ?? "Login successful")
-      localStorage.setItem("token", data.token ?? "")
-
       if (!data.token) {
         throw new Error("Login succeeded but token is missing from the response.")
       }
 
+      localStorage.setItem("token", data.token)
       setFormData({ username: "", password: "" })
-      navigate('/dashboard')
+      setIsLoginSuccessModalOpen(true)
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || "Login failed"
       console.error("Login error:", error)
@@ -42,6 +42,11 @@ function Login() {
     }finally{
       setLoading(false)
     }
+  }
+
+  const handleLoginSuccessClose = () => {
+    setIsLoginSuccessModalOpen(false)
+    navigate('/dashboard')
   }
 
   return (
@@ -96,6 +101,10 @@ function Login() {
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
+      <LoginSuccesModal
+        isOpen={isLoginSuccessModalOpen}
+        onClose={handleLoginSuccessClose}
+      />
     </div>
   );
 }
