@@ -1,7 +1,7 @@
 import express from "express"
 import { getAllUsers,createUser,add_table,update_table_status,get_all_table } from "../../controllers/Admin/admin.controllers.js"
 import { add_category, get_categories, get_menu_item, add_menu, get_category_by_type } from "../../controllers/Admin/admin.category.controller.js"
-import { add_order , get_orders} from "../../controllers/Admin/admin.order.controller.js"
+import { add_order , get_orders, update_order_item_status } from "../../controllers/Admin/admin.order.controller.js"
 import { authMiddleWare } from "../../middleware/authMiddleware.js"
 
 const router = express.Router()
@@ -25,6 +25,7 @@ router.post('/admin/add-menu/', authMiddleWare,add_menu)
 router.get('/admin/get-category-type/', authMiddleWare,get_category_by_type)
 
 router.get('/admin/get-orders/', authMiddleWare,get_orders)
+router.put('/admin/update-order-item/:id', authMiddleWare, update_order_item_status)
 
 
 export default router

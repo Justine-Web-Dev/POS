@@ -1,37 +1,17 @@
-import React from 'react'
-import { api } from '../api/api'
-import { useState } from 'react'
-import { useEffect } from 'react'
+import StationBoard from "./StationBoard";
 
 function KitchenStation() {
-  const [orders,setOrders] = useState([])
-
-  useEffect(()=>{
-    const fetchOrders = async () =>{
-      try {
-        const response = await api.get("/api/users/admin/get-orders/")
-        setOrders(response.data)
-      } catch (error) {
-        console.log(error)
-      }
-    }
-
-    fetchOrders()
-  },[])
-
   return (
-    <div>
-      <div>
-        <ul>
-        {
-          orders.map(order =>(
-            <li key={order.id}>{order.id}</li>
-          ))
-        }
-        </ul>
-      </div>
-    </div>
-  )
+    <StationBoard
+      station="Kitchen"
+      displayLabel="Kitchen Display"
+      title="Kitchen Station"
+      subtitle="Active food tickets routed to the kitchen line."
+      emptyEmoji="🍳"
+      emptyTitle="No active kitchen tickets"
+      preparingLabel="cooking"
+    />
+  );
 }
 
-export default KitchenStation
+export default KitchenStation;

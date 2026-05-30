@@ -1,9 +1,17 @@
-import React from 'react'
+import StationBoard from "./StationBoard";
 
 function BeerStation() {
   return (
-    <div>BeerStation</div>
-  )
+    <StationBoard
+      station="Beer"
+      displayLabel="Bar Display"
+      title="Beer Station"
+      subtitle="Active drink tickets routed to the bar line."
+      emptyEmoji="🍺"
+      emptyTitle="No active bar tickets"
+      preparingLabel="pouring"
+    />
+  );
 }
 
-export default BeerStation
+export default BeerStation;
