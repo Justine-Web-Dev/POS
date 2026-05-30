@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "../api/api";
+import OrderCompleteModal from "../modals/OrderCompleteModal";
+import AddMenuItem from "../modals/AddMenuItem";
+import AddCategoryModal from "../modals/AddCategoryModal";
 
 function Pos() {
   const [tables, setTables] = useState([]);
@@ -11,7 +14,11 @@ function Pos() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [cartItems, setCartItems] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isOrderCompleteOpen, setIsOrderCompleteOpen] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [isAddMenuItemOpen, setIsAddMenuItemOpen] = useState(false);
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+
 
   const normalizedStatus = (status) => {
     if (!status) return "Available";
@@ -74,13 +81,13 @@ function Pos() {
     return cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
   }, [cartItems]);
 
-  const serviceCharge = useMemo(() => {
-    return Number((cartSubtotal * 0.1).toFixed(2));
-  }, [cartSubtotal]);
+  // const serviceCharge = useMemo(() => {
+  //   return Number((cartSubtotal * 0.1).toFixed(2));
+  // }, [cartSubtotal]);
 
   const cartTotal = useMemo(() => {
-    return Number((cartSubtotal + serviceCharge).toFixed(2));
-  }, [cartSubtotal, serviceCharge]);
+    return Number((cartSubtotal).toFixed(2));
+  }, [cartSubtotal]);
 
   const handleAddToCart = (item) => {
     if (!selectedTable) {
@@ -153,11 +160,15 @@ function Pos() {
         order_status: 'New',
       })
 
-      setStatusMessage(
-        `Order fired for ${cartItems.length} item${cartItems.length > 1 ? 's' : ''}.`,
-      )
-      setCartItems([])
-      fetchTables()
+      setCompletedOrder({
+        tableNumber: selectedTable.table_number,
+        itemCount: cartItems.length,
+        total: cartTotal,
+      });
+      setIsOrderCompleteOpen(true);
+      setStatusMessage("");
+      setCartItems([]);
+      fetchTables();
     } catch (error) {
       console.error('Fire order error:', error)
       const message = error.response?.data?.message || `Error ${error.response?.status ?? 'Unknown'}: Failed to fire order.`
@@ -170,40 +181,60 @@ function Pos() {
   return (
     <div className="w-full bg-slate-50 text-slate-900 font-sans p-4 xl:p-6">
       {/* Top Header Section */}
-      <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-center md:justify-between">
-        <div>
+      <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-center lg:justify-between">
+        {/* Branding Title */}
+        <div className="shrink-0">
           <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600">
-            VelvetTap
+            NPATAP
           </p>
           <h1 className="mt-1 text-2xl font-black text-slate-900 tracking-tight lg:text-3xl">
             Menu Engine
           </h1>
         </div>
-        
+
         {/* Navigation Filters Box */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-full overflow-x-auto max-w-full">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:flex-nowrap lg:justify-end">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsAddMenuItemOpen(true)}
+              className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-full text-xs font-semibold transition whitespace-nowrap"
+            >
+              + Menu Item
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAddCategoryOpen(true)}
+              className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-full text-xs font-semibold transition whitespace-nowrap"
+            >
+              + Category
+            </button>
+          </div>
+
+          {/* Categories Scrollable Pill Container */}
+          <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-full overflow-x-auto no-scrollbar max-w-full sm:max-w-xs md:max-w-md lg:max-w-[300px] shrink-0">
             {categories.map((category) => (
               <button
                 key={category}
                 type="button"
                 onClick={() => setSelectedCategory(category)}
-                className={`rounded-full px-4 py-1 text-xs font-bold transition-all whitespace-nowrap ${
-                  selectedCategory === category
+                className={`rounded-full px-4 py-1 text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === category
                     ? "bg-blue-600 text-white shadow-sm"
                     : "text-slate-700 hover:bg-white/60"
-                }`}
+                  }`}
               >
                 {category}
               </button>
             ))}
           </div>
 
+          {/* Search Input */}
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search menu..."
-            className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full sm:w-[200px]"
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full sm:w-[200px] shrink-0"
           />
         </div>
       </header>
@@ -214,7 +245,7 @@ function Pos() {
 
       {/* Main Core Split Workspace Grid */}
       <div className="mt-4 grid gap-6 items-start grid-cols-1 xl:grid-cols-[1fr_380px] 2xl:grid-cols-[1fr_420px]">
-        
+
         {/* LEFT COMPONENT: Catalog Card Matrix */}
         <main className="min-w-0">
           {filteredMenuItems.length === 0 ? (
@@ -240,7 +271,7 @@ function Pos() {
                       {item.description || "No description provided."}
                     </p>
                   </div>
-                  
+
                   <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 mt-4">
                     <span className="text-sm font-black text-slate-900">
                       ₱{(Number(item.price) || 0).toFixed(2)}
@@ -279,8 +310,8 @@ function Pos() {
             >
               <option value="" disabled>Choose Table...</option>
               {tables.map((table) => (
-                <option key={table.id} value={table.id}>
-                  Table {table.table_number} ({table.status})
+                <option key={table.id} disabled={table.status.toLowerCase() === "occupied"} value={table.id}>
+                  {table.table_number} ({table.status})
                 </option>
               ))}
             </select>
@@ -330,17 +361,17 @@ function Pos() {
               <span>Subtotal</span>
               <span className="text-slate-800 font-bold">₱{cartSubtotal.toFixed(2)}</span>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            {/* <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
               <span>Service Charge (10%)</span>
               <span className="text-slate-800 font-bold">₱{serviceCharge.toFixed(2)}</span>
-            </div>
+            </div> */}
             <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-sm font-black text-slate-900">
               <span>Total Due</span>
               <span className="text-blue-600 text-base">₱{cartTotal.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5">
+          {/* <div className="grid grid-cols-3 gap-1.5">
             {["Card", "Cash", "Split"].map((method) => (
               <button
                 key={method}
@@ -349,7 +380,7 @@ function Pos() {
                 {method}
               </button>
             ))}
-          </div>
+          </div> */}
 
           <button
             onClick={handleFireOrder}
@@ -359,14 +390,30 @@ function Pos() {
             {orderLoading ? "Firing..." : "Fire Order"}
           </button>
 
-          {/* Interactive Console Debug Message */}
-          {statusMessage && (
-            <div className="text-[10px] font-mono bg-slate-900 text-slate-200 rounded-xl p-2.5 break-words">
-              <span className="text-blue-400 font-bold">Terminal status:</span> {statusMessage}
-            </div>
-          )}
         </aside>
       </div>
+      <OrderCompleteModal
+        isOpen={isOrderCompleteOpen}
+        onClose={() => {
+          setIsOrderCompleteOpen(false);
+          setCompletedOrder(null);
+        }}
+        tableNumber={completedOrder?.tableNumber}
+        itemCount={completedOrder?.itemCount}
+        total={completedOrder?.total}
+      />
+
+      <AddMenuItem
+        isOpen={isAddMenuItemOpen}
+        onClose={() => setIsAddMenuItemOpen(false)}
+        onSuccess={fetchMenuItems}
+      />
+
+      <AddCategoryModal
+        isOpen={isAddCategoryOpen}
+        onClose={() => setIsAddCategoryOpen(false)}
+        onSuccess={fetchMenuItems}
+      />
     </div>
   );
 }

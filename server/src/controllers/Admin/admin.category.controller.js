@@ -3,14 +3,15 @@ import { pool } from "../../config/db.js";
 export const add_category = async (req, res) => {
   try {
     const { category_name, category_type } = req.body;
-    const query = await pool.query(
-      "INSERT INTO tbl_category (category_name,category_type) VALUES ($1,$2)",
-      [category_name, category_type],
-    );
 
-    if (!category_name || !category_type) {
+    if (!category_name?.trim() || !category_type?.trim()) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    await pool.query(
+      "INSERT INTO tbl_category (category_name,category_type) VALUES ($1,$2)",
+      [category_name.trim(), category_type.trim()],
+    );
 
     res.json({ message: "Added new category" });
   } catch (error) {
@@ -24,10 +25,22 @@ export const add_menu = async (req, res) => {
 
     const queryAddMenu = await pool.query(
       "INSERT INTO tbl_menu_item (category_id, name, description, price,stock,image) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
-      [category_id, name, description, price, stock, image],
+      [category_id, name, description?.trim() || "", price, stock, image ?? ""],
     );
 
     res.json({ message: "Added menu successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const get_categories = async (req, res) => {
+  try {
+    const query = await pool.query(
+      "SELECT id, category_name, category_type FROM tbl_category ORDER BY category_name",
+    );
+
+    res.json(query.rows);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
