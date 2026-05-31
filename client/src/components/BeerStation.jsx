@@ -2,6 +2,7 @@ import StationBoard from "./StationBoard";
 
 function BeerStation() {
   return (
+    <div className="h-full min-h-0">
     <StationBoard
       station="Beer"
       displayLabel="Bar Display"
@@ -11,6 +12,7 @@ function BeerStation() {
       emptyTitle="No active bar tickets"
       preparingLabel="pouring"
     />
+    </div>
   );
 }
 

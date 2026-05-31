@@ -174,7 +174,7 @@ export const get_orders = async (req, res) => {
       JOIN tbl_menu_item m ON oi.menu_item_id = m.id
       WHERE ($1::text IS NULL OR oi.station = $1)
         AND oi.item_status NOT IN ('Completed', 'Cancelled')
-      ORDER BY o.created_at ASC, oi.id ASC`;
+      ORDER BY o.created_at ASC, oi.id DESC`;
 
     const query = await pool.query(queryText, [station || null]);
     return res.json(query.rows);

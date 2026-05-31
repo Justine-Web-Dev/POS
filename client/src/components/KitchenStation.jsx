@@ -2,6 +2,7 @@ import StationBoard from "./StationBoard";
 
 function KitchenStation() {
   return (
+    <div className="h-full min-h-0">
     <StationBoard
       station="Kitchen"
       displayLabel="Kitchen Display"
@@ -11,6 +12,7 @@ function KitchenStation() {
       emptyTitle="No active kitchen tickets"
       preparingLabel="cooking"
     />
+    </div>
   );
 }
 
