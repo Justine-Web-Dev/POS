@@ -39,7 +39,7 @@ export const add_order = async (req, res) => {
 
       for (const item of items) {
         const menuQuery = await client.query(
-          `SELECT m.id, m.name, m.price, c.category_type
+          `SELECT m.id, m.name, m.price, m.stock, c.category_type
            FROM tbl_menu_item m
            JOIN tbl_category c ON m.category_id = c.id
            WHERE m.id = $1`,
@@ -53,11 +53,21 @@ export const add_order = async (req, res) => {
         }
 
         const itemQty = Number(item.quantity) || 1;
+        const availableStock = Number(menuItem.stock) || 0;
+
+        if (availableStock < itemQty) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            message: `Insufficient stock for "${menuItem.name}". Available: ${availableStock}, requested: ${itemQty}`,
+          });
+        }
+
         const itemSubtotal = Number(menuItem.price) * itemQty;
         consolidated_total += itemSubtotal;
 
         verifiedItems.push({
           menu_item_id: menuItem.id,
+          name: menuItem.name,
           quantity: itemQty,
           price: menuItem.price,
           subtotal: itemSubtotal,
@@ -99,6 +109,23 @@ export const add_order = async (req, res) => {
         ];
         const orderItemResult = await client.query(orderItemQuery, orderItemValues);
         insertedOrderItems.push(orderItemResult.rows[0]);
+      }
+
+      for (const verified of verifiedItems) {
+        const stockResult = await client.query(
+          `UPDATE tbl_menu_item
+           SET stock = stock - $1
+           WHERE id = $2 AND stock >= $1
+           RETURNING id`,
+          [verified.quantity, verified.menu_item_id],
+        );
+
+        if (stockResult.rowCount === 0) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            message: `Insufficient stock for "${verified.name}".`,
+          });
+        }
       }
 
       await client.query("UPDATE tbl_table SET status = $1 WHERE id = $2", ["Occupied", table_id]);

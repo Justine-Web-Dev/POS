@@ -91,13 +91,34 @@ function Pos() {
     return Number((cartSubtotal).toFixed(2));
   }, [cartSubtotal]);
 
+  const getItemStock = (item) => Number(item?.stock) || 0;
+
+  const isOutOfStock = (item) => getItemStock(item) <= 0;
+
+  const getCartQuantityForItem = (menuId) =>
+    cartItems.find((cartItem) => cartItem.menu_id === menuId)?.quantity || 0;
+
+  const getAvailableStock = (item) =>
+    Math.max(0, getItemStock(item) - getCartQuantityForItem(item.menu_id));
+
   const handleAddToCart = (item) => {
     if (!selectedTable) {
       setStatusMessage("Please select a table before adding items to cart.");
       return;
     }
 
-    const quantityToAdd = Math.max(1, quantity);
+    if (isOutOfStock(item)) {
+      setStatusMessage(`"${item.name || "Item"}" is out of stock.`);
+      return;
+    }
+
+    const availableStock = getAvailableStock(item);
+    if (availableStock <= 0) {
+      setStatusMessage(`No more stock available for "${item.name || "Item"}".`);
+      return;
+    }
+
+    const quantityToAdd = Math.min(Math.max(1, quantity), availableStock);
     setCartItems((currentItems) => {
       const existing = currentItems.find(
         (cartItem) => cartItem.menu_id === item.menu_id,
@@ -127,11 +148,22 @@ function Pos() {
   const handleChangeCartQuantity = (menuId, delta) => {
     setCartItems((currentItems) =>
       currentItems
-        .map((cartItem) =>
-          cartItem.menu_id === menuId
-            ? { ...cartItem, quantity: Math.max(0, cartItem.quantity + delta) }
-            : cartItem,
-        )
+        .map((cartItem) => {
+          if (cartItem.menu_id !== menuId) return cartItem;
+
+          const menuItem = menuItems.find((item) => item.menu_id === menuId);
+          const maxStock = getItemStock(menuItem);
+          const newQuantity = cartItem.quantity + delta;
+
+          if (delta > 0 && newQuantity > maxStock) {
+            setStatusMessage(
+              `Only ${maxStock} in stock for "${cartItem.name}".`,
+            );
+            return cartItem;
+          }
+
+          return { ...cartItem, quantity: Math.max(0, newQuantity) };
+        })
         .filter((cartItem) => cartItem.quantity > 0),
     );
   };
@@ -171,6 +203,7 @@ function Pos() {
       setStatusMessage("");
       setCartItems([]);
       fetchTables();
+      fetchMenuItems();
     } catch (error) {
       console.error('Fire order error:', error)
       const message = error.response?.data?.message || `Error ${error.response?.status ?? 'Unknown'}: Failed to fire order.`
@@ -256,10 +289,18 @@ function Pos() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {filteredMenuItems.map((item) => (
+              {filteredMenuItems.map((item) => {
+                const outOfStock = isOutOfStock(item);
+                const availableStock = getAvailableStock(item);
+
+                return (
                 <div
                   key={item.menu_id}
-                  className="flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-500 hover:shadow-md"
+                  className={`flex flex-col justify-between overflow-hidden rounded-3xl border bg-white shadow-sm transition ${
+                    outOfStock
+                      ? "border-slate-200 opacity-60"
+                      : "border-slate-200 hover:border-blue-500 hover:shadow-md"
+                  }`}
                 >
                   {item.image ? (
                     <img
@@ -287,6 +328,15 @@ function Pos() {
                     <p className="mt-1 text-[11px] leading-relaxed text-slate-400 line-clamp-2">
                       {item.description || "No description provided."}
                     </p>
+                    {outOfStock ? (
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
+                        Out of stock
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-[10px] font-semibold text-slate-400">
+                        {availableStock} left
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 mt-4">
@@ -308,9 +358,9 @@ function Pos() {
                       <button
                         type="button"
                         onClick={() => handleAddToCart(item)}
-                        disabled={orderLoading}
-                        title="Add to cart"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:opacity-40"
+                        disabled={orderLoading || outOfStock || availableStock <= 0}
+                        title={outOfStock ? "Out of stock" : "Add to cart"}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {orderLoading ? "…" : "+"}
                       </button>
@@ -318,7 +368,8 @@ function Pos() {
                   </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </main>
@@ -358,7 +409,11 @@ function Pos() {
                 <p className="text-[11px] max-w-[180px] mt-0.5">Tap menu items to add them here.</p>
               </div>
             ) : (
-              cartItems.map((cartItem) => (
+              cartItems.map((cartItem) => {
+                const menuItem = menuItems.find((item) => item.menu_id === cartItem.menu_id);
+                const atMaxStock = cartItem.quantity >= getItemStock(menuItem);
+
+                return (
                 <div key={cartItem.menu_id} className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-bold text-slate-800">{cartItem.name}</p>
@@ -375,7 +430,8 @@ function Pos() {
                       <button
                         type="button"
                         onClick={() => handleChangeCartQuantity(cartItem.menu_id, 1)}
-                        className="h-4 w-4 text-[10px] font-bold text-slate-500 hover:bg-slate-100 rounded-full flex items-center justify-center"
+                        disabled={atMaxStock}
+                        className="h-4 w-4 text-[10px] font-bold text-slate-500 hover:bg-slate-100 rounded-full flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
                       >+</button>
                     </div>
                     <p className="text-xs font-bold text-blue-600 w-16 text-right">
@@ -383,7 +439,8 @@ function Pos() {
                     </p>
                   </div>
                 </div>
-              ))
+              );
+              })
             )}
           </div>
 
