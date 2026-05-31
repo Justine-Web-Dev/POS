@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "../api/api";
-import OrderCompleteModal from "../modals/OrderCompleteModal";
+import ReceiptModal from "../modals/ReceiptModal";
 import AddMenuItem from "../modals/AddMenuItem";
 import EditMenuItem from "../modals/EditMenuItem";
 import AddCategoryModal from "../modals/AddCategoryModal";
@@ -15,8 +15,8 @@ function Pos() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [cartItems, setCartItems] = useState([]);
-  const [isOrderCompleteOpen, setIsOrderCompleteOpen] = useState(false);
-  const [completedOrder, setCompletedOrder] = useState(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
   const [isAddMenuItemOpen, setIsAddMenuItemOpen] = useState(false);
   const [menuItemToEdit, setMenuItemToEdit] = useState(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
@@ -184,7 +184,7 @@ function Pos() {
       setStatusMessage('Sending order...')
 
       // Server now expects a single batch request with an items array
-      await api.post('/api/users/admin/add-order', {
+      const response = await api.post('/api/users/admin/add-order', {
         table_id: selectedTable.id,
         items: cartItems.map((item) => ({
           id: item.menu_id,
@@ -194,12 +194,18 @@ function Pos() {
         order_status: 'New',
       })
 
-      setCompletedOrder({
+      const orderSnapshot = [...cartItems];
+
+      setReceiptData({
+        orderNumber: response.data?.data?.order_number,
         tableNumber: selectedTable.table_number,
-        itemCount: cartItems.length,
+        items: orderSnapshot,
+        subtotal: cartSubtotal,
         total: cartTotal,
+        paymentStatus: response.data?.data?.payment_status || "Pending",
+        createdAt: response.data?.data?.created_at || new Date().toISOString(),
       });
-      setIsOrderCompleteOpen(true);
+      setIsReceiptOpen(true);
       setStatusMessage("");
       setCartItems([]);
       fetchTables();
@@ -481,15 +487,13 @@ function Pos() {
 
         </aside>
       </div>
-      <OrderCompleteModal
-        isOpen={isOrderCompleteOpen}
+      <ReceiptModal
+        isOpen={isReceiptOpen}
         onClose={() => {
-          setIsOrderCompleteOpen(false);
-          setCompletedOrder(null);
+          setIsReceiptOpen(false);
+          setReceiptData(null);
         }}
-        tableNumber={completedOrder?.tableNumber}
-        itemCount={completedOrder?.itemCount}
-        total={completedOrder?.total}
+        receipt={receiptData}
       />
 
       <AddMenuItem

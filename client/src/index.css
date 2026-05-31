@@ -1,1 +1,35 @@
-@import "tailwindcss"
+@import "tailwindcss";
+
+@media print {
+  @page {
+    margin: 8mm;
+    size: 80mm auto;
+  }
+
+  body {
+    margin: 0;
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #receipt-print-area,
+  #receipt-print-area * {
+    visibility: visible;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #receipt-print-area {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    max-width: 72mm;
+    padding: 0;
+    background: white !important;
+  }
+}
