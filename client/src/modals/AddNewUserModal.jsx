@@ -19,7 +19,7 @@ function AddNewUserModal({ userToEdit, onClose, onSuccess }) {
         fullname: userToEdit.fullname || "",
         username: userToEdit.username || "",
         password: "",
-        role: userToEdit.role || "Select Role..."
+        role: userToEdit.role || ""
       });
     } else {
       setFormData(emptyForm);
@@ -142,6 +142,8 @@ function AddNewUserModal({ userToEdit, onClose, onSuccess }) {
               className="w-full px-3.5 py-2 border border-slate-300 rounded-lg shadow-xs bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-900"
             >
               <option value="" selected>Select Role...</option>
+              <option value="Administrator" disabled>Administrator</option>
+              <option value="Manager">Manager</option>
               <option value="Staff">Staff</option>
               <option value="Kitchen staff">Kitchen Staff</option>
               <option value="Beer station staff">Beer Station Staff</option>

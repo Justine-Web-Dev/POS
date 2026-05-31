@@ -3,7 +3,7 @@ import bcrypt from "bcrypt"
 
 export const getAllUsers = async (req,res)=>{
   try {
-    const getUsers = await pool.query('SELECT * FROM tbl_user')
+    const getUsers = await pool.query('SELECT * FROM tbl_user ORDER BY id ASC')
     res.json(getUsers.rows)
   } catch (error) {
     res.status(500).json({message: error.message})
@@ -48,6 +48,13 @@ export const updateUser = async (req,res) =>{
     const {id} = req.params
     const {fullname,username,role} = req.body
     const result = await pool.query('UPDATE tbl_user SET fullname=$1, username=$2, role=$3 WHERE id=$4 RETURNING *', [fullname,username,role,id])
+    
+    if(role.toLowerCase() === "manager"){
+      const managerExists = await pool.query('SELECT id FROM tbl_user WHERE role = $1', [role])
+      if(managerExists.rows.length > 0){
+        return res.status(400).json({message:"Manager is already exists"})
+      }
+    }
 
     if (result.rowCount === 0) {
       return res.status(404).json({ message: "User not found" })
