@@ -52,7 +52,7 @@ function AddNewUserModal({ userToEdit, onClose, onSuccess }) {
       const message = error.response?.data?.message || "Something went wrong";
       alert(message);
       console.log(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
@@ -162,7 +162,10 @@ function AddNewUserModal({ userToEdit, onClose, onSuccess }) {
               type="submit"
               className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-xs transition-colors"
             >
-              {loading ? "Adding..." : isEditMode ? "Update User" : "Add User"}
+              {loading
+                ? (isEditMode ? "Updating..." : "Adding...")
+                : (isEditMode ? "Update User" : "Add User")
+              }
             </button>
           </div>
         </form>

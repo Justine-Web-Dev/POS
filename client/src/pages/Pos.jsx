@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "../api/api";
 import OrderCompleteModal from "../modals/OrderCompleteModal";
 import AddMenuItem from "../modals/AddMenuItem";
+import EditMenuItem from "../modals/EditMenuItem";
 import AddCategoryModal from "../modals/AddCategoryModal";
 
 function Pos() {
@@ -17,6 +18,7 @@ function Pos() {
   const [isOrderCompleteOpen, setIsOrderCompleteOpen] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [isAddMenuItemOpen, setIsAddMenuItemOpen] = useState(false);
+  const [menuItemToEdit, setMenuItemToEdit] = useState(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
 
 
@@ -257,8 +259,23 @@ function Pos() {
               {filteredMenuItems.map((item) => (
                 <div
                   key={item.menu_id}
-                  className="flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-500 hover:shadow-md min-h-[160px]"
+                  className="flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-500 hover:shadow-md"
                 >
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.name || "Menu item"}
+                      className="h-36 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-36 w-full items-center justify-center bg-slate-100">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                        No image
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex flex-1 flex-col justify-between p-5">
                   <div>
                     <p className="text-[9px] font-bold uppercase tracking-wider text-blue-500">
                       {item.category_name || item.category_type || "Menu"}
@@ -276,14 +293,29 @@ function Pos() {
                     <span className="text-sm font-black text-slate-900">
                       ₱{(Number(item.price) || 0).toFixed(2)}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleAddToCart(item)}
-                      disabled={orderLoading}
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:opacity-40"
-                    >
-                      {orderLoading ? "…" : "+"}
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setMenuItemToEdit(item)}
+                        disabled={orderLoading}
+                        title="Edit menu item"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-blue-500 hover:text-blue-600 active:scale-95 disabled:opacity-40"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddToCart(item)}
+                        disabled={orderLoading}
+                        title="Add to cart"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:opacity-40"
+                      >
+                        {orderLoading ? "…" : "+"}
+                      </button>
+                    </div>
+                  </div>
                   </div>
                 </div>
               ))}
@@ -406,6 +438,12 @@ function Pos() {
       <AddMenuItem
         isOpen={isAddMenuItemOpen}
         onClose={() => setIsAddMenuItemOpen(false)}
+        onSuccess={fetchMenuItems}
+      />
+
+      <EditMenuItem
+        itemToEdit={menuItemToEdit}
+        onClose={() => setMenuItemToEdit(null)}
         onSuccess={fetchMenuItems}
       />
 

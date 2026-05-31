@@ -1,6 +1,6 @@
 import express from "express"
 import { getAllUsers,createUser,add_table,update_table_status,get_all_table,updateUser } from "../../controllers/Admin/admin.controllers.js"
-import { add_category, get_categories, get_menu_item, add_menu, get_category_by_type } from "../../controllers/Admin/admin.category.controller.js"
+import { add_category, get_categories, get_menu_item, add_menu, update_menu, get_category_by_type } from "../../controllers/Admin/admin.category.controller.js"
 import { add_order , get_orders, update_order_item_status } from "../../controllers/Admin/admin.order.controller.js"
 import { authMiddleWare } from "../../middleware/authMiddleware.js"
 
@@ -22,6 +22,7 @@ router.post('/admin/add-category/',add_category)
 router.get('/admin/get-categories/', authMiddleWare, get_categories)
 router.get('/admin/get-menu/', authMiddleWare,get_menu_item)
 router.post('/admin/add-menu/', authMiddleWare,add_menu)
+router.put('/admin/update-menu/:id', authMiddleWare, update_menu)
 
 router.get('/admin/get-category-type/', authMiddleWare,get_category_by_type)
 
