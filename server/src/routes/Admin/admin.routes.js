@@ -1,5 +1,5 @@
 import express from "express"
-import { getAllUsers,createUser,add_table,update_table_status,get_all_table } from "../../controllers/Admin/admin.controllers.js"
+import { getAllUsers,createUser,add_table,update_table_status,get_all_table,updateUser } from "../../controllers/Admin/admin.controllers.js"
 import { add_category, get_categories, get_menu_item, add_menu, get_category_by_type } from "../../controllers/Admin/admin.category.controller.js"
 import { add_order , get_orders, update_order_item_status } from "../../controllers/Admin/admin.order.controller.js"
 import { authMiddleWare } from "../../middleware/authMiddleware.js"
@@ -7,8 +7,9 @@ import { authMiddleWare } from "../../middleware/authMiddleware.js"
 const router = express.Router()
 
 //admin handle
-router.get('/admin/get-all-users' ,getAllUsers)
+router.get('/admin/get-all-users',authMiddleWare,getAllUsers)
 router.post('/admin/create-user', authMiddleWare,createUser)
+router.put('/admin/update-user/:id', authMiddleWare, updateUser)
 
 //table create,read,update,
 router.post('/admin/add-table',authMiddleWare, add_table)

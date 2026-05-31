@@ -43,6 +43,22 @@ export const createUser = async (req,res) =>{
   }
 }
 
+export const updateUser = async (req,res) =>{
+  try {
+    const {id} = req.params
+    const {fullname,username,role} = req.body
+    const result = await pool.query('UPDATE tbl_user SET fullname=$1, username=$2, role=$3 WHERE id=$4 RETURNING *', [fullname,username,role,id])
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    res.json({ message: "User updated successfully" })
+  } catch (error) {
+     res.status(500).json({message: error.message})
+  }
+}
+
 //tbl_table controller
 export const get_all_table = async (req,res) =>{
   try {

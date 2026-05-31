@@ -1,25 +1,43 @@
 import { LuUserPen, LuUserPlus, LuPencil, LuTrash2 } from "react-icons/lu";
 import { api } from "../../api/api";
 import { useEffect, useState } from "react";
+import AddNewUserModal from "../../modals/AddNewUserModal"
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/api/users/admin/get-all-users");
+      setUsers(response.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get("/api/users/admin/get-all-users");
-        console.log(response.data);
-        setUsers(response.data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
+
+  const openAddModal = () => {
+    setEditingUser(null);
+    setShowModal(true);
+  };
+
+  const handleUpdateUser = (user) => {
+    setEditingUser(user);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingUser(null);
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 border border-slate-200 rounded-[16px] shadow-xs p-6">
@@ -38,7 +56,9 @@ function UserManagement() {
           </div>
         </div>
 
-        <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium shadow-sm hover:bg-blue-700 hover:shadow transition-all duration-200 cursor-pointer group active:scale-[0.98]">
+        <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium shadow-sm hover:bg-blue-700 hover:shadow transition-all duration-200 cursor-pointer group active:scale-[0.98]"
+        onClick={openAddModal}
+        >
           <LuUserPlus
             size={18}
             className="transition-transform group-hover:scale-110"
@@ -110,6 +130,7 @@ function UserManagement() {
                       <button
                         className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                         title="Edit User"
+                        onClick={() => handleUpdateUser(user)}
                       >
                         <LuPencil size={16} />
                       </button>
@@ -134,6 +155,14 @@ function UserManagement() {
           </tbody>
         </table>
       </main>
+        
+        {showModal && (
+          <AddNewUserModal
+            userToEdit={editingUser}
+            onClose={closeModal}
+            onSuccess={fetchUsers}
+          />
+        )}
     </div>
   );
 }
