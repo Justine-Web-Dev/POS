@@ -4,6 +4,7 @@ import ReceiptModal from "../modals/ReceiptModal";
 import AddMenuItem from "../modals/AddMenuItem";
 import EditMenuItem from "../modals/EditMenuItem";
 import AddCategoryModal from "../modals/AddCategoryModal";
+import TableOccupiedWarningModal from "../modals/TableOccupiedWarningModal";
 
 function Pos() {
   const [tables, setTables] = useState([]);
@@ -20,7 +21,9 @@ function Pos() {
   const [isAddMenuItemOpen, setIsAddMenuItemOpen] = useState(false);
   const [menuItemToEdit, setMenuItemToEdit] = useState(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [tableWarning, setTableWarning] = useState(null);
 
+  const BLOCKED_TABLE_STATUSES = ["Occupied", "Reserved", "Dirty"];
 
   const normalizedStatus = (status) => {
     if (!status) return "Available";
@@ -58,6 +61,38 @@ function Pos() {
     fetchMenuItems();
   }, [fetchTables, fetchMenuItems]);
 
+  const getLiveTable = useCallback(
+    (tableRef) => {
+      if (!tableRef) return null;
+      const id = typeof tableRef === "object" ? tableRef.id : tableRef;
+      return tables.find((t) => t.id === id) ?? null;
+    },
+    [tables],
+  );
+
+  const showTableBlockedWarning = useCallback(
+    (tableRef) => {
+      const live = getLiveTable(tableRef);
+      if (!live || !BLOCKED_TABLE_STATUSES.includes(live.status)) return false;
+      setTableWarning({
+        tableNumber: live.table_number,
+        status: live.status,
+      });
+      return true;
+    },
+    [getLiveTable],
+  );
+
+  useEffect(() => {
+    setSelectedTable((current) => {
+      if (!current?.id) return current;
+      const live = tables.find((t) => t.id === current.id);
+      if (!live || BLOCKED_TABLE_STATUSES.includes(live.status)) return null;
+      if (live.status !== current.status) return live;
+      return current;
+    });
+  }, [tables]);
+
   const categories = useMemo(() => {
     const values = menuItems.map((item) => item.category_type || "Unknown");
     return ["All", ...Array.from(new Set(values))];
@@ -75,7 +110,15 @@ function Pos() {
   }, [menuItems, selectedCategory, searchQuery]);
 
   const handleSelectTable = (table) => {
-    setSelectedTable(table);
+    const live = getLiveTable(table) ?? table;
+    if (BLOCKED_TABLE_STATUSES.includes(live.status)) {
+      setTableWarning({
+        tableNumber: live.table_number,
+        status: live.status,
+      });
+      return;
+    }
+    setSelectedTable(live);
     setStatusMessage("");
   };
 
@@ -104,6 +147,10 @@ function Pos() {
   const handleAddToCart = (item) => {
     if (!selectedTable) {
       setStatusMessage("Please select a table before adding items to cart.");
+      return;
+    }
+
+    if (showTableBlockedWarning(selectedTable)) {
       return;
     }
 
@@ -146,6 +193,10 @@ function Pos() {
   };
 
   const handleChangeCartQuantity = (menuId, delta) => {
+    if (delta > 0 && selectedTable && showTableBlockedWarning(selectedTable)) {
+      return;
+    }
+
     setCartItems((currentItems) =>
       currentItems
         .map((cartItem) => {
@@ -179,6 +230,10 @@ function Pos() {
       return;
     }
 
+    if (showTableBlockedWarning(selectedTable)) {
+      return;
+    }
+
     try {
       setOrderLoading(true)
       setStatusMessage('Sending order...')
@@ -197,6 +252,7 @@ function Pos() {
       const orderSnapshot = [...cartItems];
 
       setReceiptData({
+        orderId: response.data?.data?.id,
         orderNumber: response.data?.data?.order_number,
         tableNumber: selectedTable.table_number,
         items: orderSnapshot,
@@ -208,6 +264,7 @@ function Pos() {
       setIsReceiptOpen(true);
       setStatusMessage("");
       setCartItems([]);
+      setSelectedTable(null);
       fetchTables();
       fetchMenuItems();
     } catch (error) {
@@ -220,47 +277,46 @@ function Pos() {
   };
 
   return (
-    <div className="w-full bg-slate-50 text-slate-900 font-sans p-4 xl:p-6">
-      {/* Top Header Section */}
-      <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-center lg:justify-between">
-        {/* Branding Title */}
-        <div className="shrink-0">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-slate-900 font-sans">
+      {/* Top Header Section — compact for 1366×768 with sidebar */}
+      <header className="shrink-0 flex flex-col gap-2 border-b border-slate-200 px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+        <div className="min-w-0 shrink-0">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-blue-600">
             NPATAP
           </p>
-          <h1 className="mt-1 text-2xl font-black text-slate-900 tracking-tight lg:text-3xl">
+          <h1 className="text-lg font-black leading-tight text-slate-900 tracking-tight">
             Menu Engine
           </h1>
+          <p className="mt-0.5 text-[10px] text-slate-400 line-clamp-1">
+            Browse menu items by category or search for the perfect drink.
+          </p>
         </div>
 
-        {/* Navigation Filters Box */}
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:flex-nowrap lg:justify-end">
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-end">
+          <div className="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
               onClick={() => setIsAddMenuItemOpen(true)}
-              className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-full text-xs font-semibold transition whitespace-nowrap"
+              className="rounded-full border border-blue-600 px-3 py-1.5 text-[11px] font-semibold text-blue-600 transition hover:bg-blue-50 whitespace-nowrap"
             >
               + Menu Item
             </button>
             <button
               type="button"
               onClick={() => setIsAddCategoryOpen(true)}
-              className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-full text-xs font-semibold transition whitespace-nowrap"
+              className="rounded-full border border-blue-600 px-3 py-1.5 text-[11px] font-semibold text-blue-600 transition hover:bg-blue-50 whitespace-nowrap"
             >
               + Category
             </button>
           </div>
 
-          {/* Categories Scrollable Pill Container */}
-          <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-full overflow-x-auto no-scrollbar max-w-full sm:max-w-xs md:max-w-md lg:max-w-[300px] shrink-0">
+          <div className="flex max-w-full min-w-0 shrink items-center gap-1 rounded-full bg-slate-200/60 p-0.5 overflow-x-auto no-scrollbar sm:max-w-[220px]">
             {categories.map((category) => (
               <button
                 key={category}
                 type="button"
                 onClick={() => setSelectedCategory(category)}
-                className={`rounded-full px-4 py-1 text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === category
+                className={`rounded-full px-3 py-0.5 text-[11px] font-bold transition-all whitespace-nowrap ${selectedCategory === category
                     ? "bg-blue-600 text-white shadow-sm"
                     : "text-slate-700 hover:bg-white/60"
                   }`}
@@ -270,123 +326,120 @@ function Pos() {
             ))}
           </div>
 
-          {/* Search Input */}
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search menu..."
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full sm:w-[200px] shrink-0"
+            className="w-full min-w-[120px] max-w-[160px] shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
       </header>
 
-      <p className="text-xs text-slate-400 mt-4">
-        Browse menu items by category or search for the perfect drink.
-      </p>
-
       {/* Main Core Split Workspace Grid */}
-      <div className="mt-4 grid gap-6 items-start grid-cols-1 xl:grid-cols-[1fr_380px] 2xl:grid-cols-[1fr_420px]">
+      <div className="mt-2 grid min-h-0 flex-1 grid-cols-[1fr_440px] gap-2 items-stretch px-2 pb-2 max-[1366px]:grid-cols-[1fr_220px] max-[1366px]:gap-1.5">
 
         {/* LEFT COMPONENT: Catalog Card Matrix */}
-        <main className="min-w-0">
+        <main className="min-w-0 min-h-0 overflow-y-auto pr-0.5">
           {filteredMenuItems.length === 0 ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400 shadow-sm">
               No menu items found.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {filteredMenuItems.map((item) => {
-                const outOfStock = isOutOfStock(item);
-                const availableStock = getAvailableStock(item);
+            <div className="grid gap-2 grid-cols-[repeat(4,minmax(118px,1fr))] max-[1366px]:grid-cols-[repeat(4,minmax(108px,1fr))] max-[1366px]:gap-1.5">
+  {filteredMenuItems.map((item) => {
+    const outOfStock = isOutOfStock(item);
+    const availableStock = getAvailableStock(item);
 
-                return (
-                <div
-                  key={item.menu_id}
-                  className={`flex flex-col justify-between overflow-hidden rounded-3xl border bg-white shadow-sm transition ${
-                    outOfStock
-                      ? "border-slate-200 opacity-60"
-                      : "border-slate-200 hover:border-blue-500 hover:shadow-md"
-                  }`}
-                >
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.name || "Menu item"}
-                      className="h-36 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-36 w-full items-center justify-center bg-slate-100">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
-                        No image
-                      </p>
-                    </div>
-                  )}
+    return (
+      <div
+        key={item.menu_id}
+        className={`flex flex-col justify-between overflow-hidden rounded-xl border bg-white shadow-sm transition ${
+          outOfStock
+            ? "border-slate-200 opacity-60"
+            : "border-slate-200 hover:border-blue-500 hover:shadow-md"
+        }`}
+      >
+        {/* INCREASED HEIGHT: Doubled the image area height for a taller card presence */}
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.name || "Menu item"}
+            className="h-28 w-full object-cover sm:h-32" 
+          />
+        ) : (
+          <div className="flex h-28 w-full items-center justify-center bg-slate-100 sm:h-32">
+            <p className="text-[8px] font-bold uppercase tracking-wider text-slate-300">
+              No image
+            </p>
+          </div>
+        )}
 
-                  <div className="flex flex-1 flex-col justify-between p-5">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-blue-500">
-                      {item.category_name || item.category_type || "Menu"}
-                    </p>
-                    {/* Fixed Text clipping here: normal breaks ensure wrapping text fields */}
-                    <h2 className="mt-1 text-sm font-black text-slate-900 leading-snug break-words">
-                      {item.name}
-                    </h2>
-                    <p className="mt-1 text-[11px] leading-relaxed text-slate-400 line-clamp-2">
-                      {item.description || "No description provided."}
-                    </p>
-                    {outOfStock ? (
-                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
-                        Out of stock
-                      </p>
-                    ) : (
-                      <p className="mt-2 text-[10px] font-semibold text-slate-400">
-                        {availableStock} left
-                      </p>
-                    )}
-                  </div>
+        {/* INCREASED PADDING: Increased from p-2 to p-3.5 for a more spacious, taller content area */}
+        <div className="flex flex-1 flex-col justify-between p-3.5">
+          <div>
+            <p className="text-[8px] font-bold uppercase tracking-wider text-blue-500 truncate">
+              {item.category_name || item.category_type || "Menu"}
+            </p>
+            <h2 className="mt-0.5 text-[11px] font-black text-slate-900 leading-tight line-clamp-2">
+              {item.name}
+            </h2>
+            {/* INCREASED LINE CLAMP: Shifted to line-clamp-2 to allow extra room for descriptions */}
+            <p className="mt-1 text-[9px] leading-snug text-slate-400 line-clamp-2">
+              {item.description || "No description provided."}
+            </p>
+            {outOfStock ? (
+              <p className="mt-1.5 text-[8px] font-bold uppercase tracking-wider text-red-500">
+                Out of stock
+              </p>
+            ) : (
+              <p className="mt-1.5 text-[8px] font-semibold text-slate-400">
+                {availableStock} left
+              </p>
+            )}
+          </div>
 
-                  <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 mt-4">
-                    <span className="text-sm font-black text-slate-900">
-                      ₱{(Number(item.price) || 0).toFixed(2)}
-                    </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setMenuItemToEdit(item)}
-                        disabled={orderLoading}
-                        title="Edit menu item"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-blue-500 hover:text-blue-600 active:scale-95 disabled:opacity-40"
-                      >
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(item)}
-                        disabled={orderLoading || outOfStock || availableStock <= 0}
-                        title={outOfStock ? "Out of stock" : "Add to cart"}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        {orderLoading ? "…" : "+"}
-                      </button>
-                    </div>
-                  </div>
-                  </div>
-                </div>
-              );
-              })}
+          <div className="flex items-center justify-between gap-1 border-t border-slate-100 pt-2 mt-3">
+            <span className="text-[11px] font-black text-slate-900">
+              ₱{(Number(item.price) || 0).toFixed(2)}
+            </span>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMenuItemToEdit(item)}
+                disabled={orderLoading}
+                title="Edit menu item"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-blue-500 hover:text-blue-600 active:scale-95 disabled:opacity-40"
+              >
+                <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAddToCart(item)}
+                disabled={orderLoading || outOfStock || availableStock <= 0}
+                title={outOfStock ? "Out of stock" : "Add to cart"}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[11px] text-white transition hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {orderLoading ? "…" : "+"}
+              </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
           )}
         </main>
 
         {/* RIGHT COMPONENT: Order Ticket Node Panel */}
-        <aside className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
-          <div className="border-b border-slate-100 pb-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500">
+        <aside className="flex min-h-0 min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm max-[1366px]:p-2">
+          <div className="shrink-0 border-b border-slate-100 pb-2">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-blue-500">
               Active Ticket
             </p>
-            <h2 className="text-base font-extrabold text-slate-900">
+            <h2 className="text-sm font-extrabold text-slate-900">
               Table Allocation
             </h2>
             <select
@@ -395,11 +448,11 @@ function Pos() {
                 const table = tables.find((t) => String(t.id) === e.target.value);
                 if (table) handleSelectTable(table);
               }}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-500"
+              className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-800 outline-none transition focus:border-blue-500"
             >
               <option value="" disabled>Choose Table...</option>
               {tables.map((table) => (
-                <option key={table.id} disabled={table.status.toLowerCase() === "occupied"} value={table.id}>
+                <option key={table.id} value={table.id}>
                   {table.table_number} ({table.status})
                 </option>
               ))}
@@ -407,12 +460,12 @@ function Pos() {
           </div>
 
           {/* Cart Stream Area */}
-          <div className="max-h-[280px] overflow-y-auto space-y-2 pr-0.5">
+          <div className="min-h-0 flex-1 overflow-y-auto space-y-1.5 py-2 pr-0.5">
             {cartItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400">
-                <span className="text-2xl mb-1">🛒</span>
-                <p className="text-xs font-bold text-slate-700">Cart is empty</p>
-                <p className="text-[11px] max-w-[180px] mt-0.5">Tap menu items to add them here.</p>
+              <div className="flex min-h-[120px] flex-col items-center justify-center py-4 text-center text-slate-400">
+                <span className="mb-0.5 text-xl">🛒</span>
+                <p className="text-[11px] font-bold text-slate-700">Cart is empty</p>
+                <p className="mt-0.5 max-w-[160px] text-[10px]">Tap menu items to add them here.</p>
               </div>
             ) : (
               cartItems.map((cartItem) => {
@@ -451,36 +504,21 @@ function Pos() {
           </div>
 
           {/* Checkout Calculations */}
-          <div className="border-t border-slate-100 pt-3 space-y-1.5 text-xs">
-            <div className="flex items-center justify-between text-slate-500 font-medium">
+          <div className="shrink-0 space-y-1 border-t border-slate-100 pt-2 text-[11px]">
+            <div className="flex items-center justify-between font-medium text-slate-500">
               <span>Subtotal</span>
-              <span className="text-slate-800 font-bold">₱{cartSubtotal.toFixed(2)}</span>
+              <span className="font-bold text-slate-800">₱{cartSubtotal.toFixed(2)}</span>
             </div>
-            {/* <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span>Service Charge (10%)</span>
-              <span className="text-slate-800 font-bold">₱{serviceCharge.toFixed(2)}</span>
-            </div> */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-sm font-black text-slate-900">
+            <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 text-xs font-black text-slate-900">
               <span>Total Due</span>
-              <span className="text-blue-600 text-base">₱{cartTotal.toFixed(2)}</span>
+              <span className="text-sm text-blue-600">₱{cartTotal.toFixed(2)}</span>
             </div>
           </div>
-
-          {/* <div className="grid grid-cols-3 gap-1.5">
-            {["Card", "Cash", "Split"].map((method) => (
-              <button
-                key={method}
-                className="h-8 rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-slate-700 hover:bg-slate-50"
-              >
-                {method}
-              </button>
-            ))}
-          </div> */}
 
           <button
             onClick={handleFireOrder}
             disabled={orderLoading || !selectedTable || cartItems.length === 0}
-            className="h-10 w-full rounded-xl bg-blue-600 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-40"
+            className="mt-2 h-9 w-full shrink-0 rounded-lg bg-blue-600 text-[11px] font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-40"
           >
             {orderLoading ? "Firing..." : "Fire Order"}
           </button>
@@ -494,6 +532,10 @@ function Pos() {
           setReceiptData(null);
         }}
         receipt={receiptData}
+        onPaymentComplete={(paymentInfo) => {
+          fetchTables();
+          setReceiptData((prev) => (prev ? { ...prev, ...paymentInfo } : prev));
+        }}
       />
 
       <AddMenuItem
@@ -512,6 +554,13 @@ function Pos() {
         isOpen={isAddCategoryOpen}
         onClose={() => setIsAddCategoryOpen(false)}
         onSuccess={fetchMenuItems}
+      />
+
+      <TableOccupiedWarningModal
+        isOpen={Boolean(tableWarning)}
+        onClose={() => setTableWarning(null)}
+        tableNumber={tableWarning?.tableNumber}
+        status={tableWarning?.status}
       />
     </div>
   );

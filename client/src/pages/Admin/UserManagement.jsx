@@ -1,12 +1,16 @@
 import { LuUserPen, LuUserPlus, LuPencil, LuTrash2 } from "react-icons/lu";
 import { api } from "../../api/api";
 import { useEffect, useState } from "react";
-import AddNewUserModal from "../../modals/AddNewUserModal"
+import AddNewUserModal from "../../modals/AddNewUserModal";
+
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  
+  // 1. New state to track the search text
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -39,6 +43,16 @@ function UserManagement() {
     setEditingUser(null);
   };
 
+  // 2. Filter the users list in real-time based on the search query
+  const filteredUsers = users.filter((user) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      user.fullname?.toLowerCase().includes(query) ||
+      user.username?.toLowerCase().includes(query) ||
+      user.role?.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="min-h-screen bg-slate-100 border border-slate-200 rounded-[16px] shadow-xs p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
@@ -56,15 +70,32 @@ function UserManagement() {
           </div>
         </div>
 
-        <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium shadow-sm hover:bg-blue-700 hover:shadow transition-all duration-200 cursor-pointer group active:scale-[0.98]"
-        onClick={openAddModal}
-        >
-          <LuUserPlus
-            size={18}
-            className="transition-transform group-hover:scale-110"
-          />
-          <span>Add New User</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-grow sm:flex-grow-0">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            {/* 3. Connect the input element to state */}
+            <input
+              type="text"
+              placeholder="Search user..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white border border-slate-200 text-sm rounded-xl pl-9 pr-4 py-2 w-full sm:w-56 focus:outline-none focus:border-blue-500 transition-colors placeholder-slate-400 text-slate-800 shadow-xs"
+            />
+          </div>
+          <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium shadow-sm hover:bg-blue-700 hover:shadow transition-all duration-200 cursor-pointer group active:scale-[0.98]"
+            onClick={openAddModal}
+          >
+            <LuUserPlus
+              size={18}
+              className="transition-transform group-hover:scale-110"
+            />
+            <span>Add New User</span>
+          </button>
+        </div>
       </div>
 
       <main className="overflow-x-auto border border-slate-200 rounded-xl">
@@ -81,7 +112,6 @@ function UserManagement() {
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-            {/* 1. Handling Loading State Correctly */}
             {loading ? (
               <tr>
                 <td
@@ -89,14 +119,13 @@ function UserManagement() {
                   className="py-10 text-center text-slate-500 font-medium"
                 >
                   <div className="flex flex-col items-center justify-center gap-2">
-                    {/* Optional: Simple CSS Spinner */}
                     <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     <span>Loading users...</span>
                   </div>
                 </td>
               </tr>
-            ) : users.length > 0 ? (
-              users.map((user) => (
+            ) : filteredUsers.length > 0 ? ( // 4. Map over filteredUsers instead of users
+              filteredUsers.map((user) => (
                 <tr
                   key={user.id}
                   className="hover:bg-slate-50/70 transition-colors"
@@ -114,7 +143,6 @@ function UserManagement() {
                     </span>
                   </td>
                   <td className="py-4 px-4">
-                    {/* Dynamic status badge color fallback example */}
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                         user.status?.toLowerCase() === "active"
@@ -145,10 +173,10 @@ function UserManagement() {
                 </tr>
               ))
             ) : (
-              /* 2. Handling Empty State Correctly */
               <tr>
                 <td colSpan={6} className="py-12 text-center text-slate-400">
-                  No users registered.
+                  {/* 5. Smart fallback text if no search results match */}
+                  {searchQuery ? `No users found matching "${searchQuery}"` : "No users registered."}
                 </td>
               </tr>
             )}
@@ -156,13 +184,13 @@ function UserManagement() {
         </table>
       </main>
         
-        {showModal && (
-          <AddNewUserModal
-            userToEdit={editingUser}
-            onClose={closeModal}
-            onSuccess={fetchUsers}
-          />
-        )}
+      {showModal && (
+        <AddNewUserModal
+          userToEdit={editingUser}
+          onClose={closeModal}
+          onSuccess={fetchUsers}
+        />
+      )}
     </div>
   );
 }

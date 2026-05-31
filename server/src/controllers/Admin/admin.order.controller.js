@@ -183,6 +183,107 @@ export const get_orders = async (req, res) => {
   }
 };
 
+const PAYMENT_METHODS = ["Cash", "Card", "GCash", "PayMaya"];
+
+export const process_payment = async (req, res) => {
+  try {
+    const { order_id, payment_method, amount, reference_number } = req.body;
+    const cashierId = req.user?.id;
+
+    if (!cashierId) {
+      return res.status(401).json({ message: "Access denied. Invalid or missing token." });
+    }
+
+    if (!order_id || !payment_method || amount == null) {
+      return res.status(400).json({ message: "order_id, payment_method, and amount are required" });
+    }
+
+    if (!PAYMENT_METHODS.includes(payment_method)) {
+      return res.status(400).json({
+        message: `payment_method must be one of: ${PAYMENT_METHODS.join(", ")}`,
+      });
+    }
+
+    const payAmount = Number(amount);
+    if (!Number.isFinite(payAmount) || payAmount <= 0) {
+      return res.status(400).json({ message: "amount must be a positive number" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const orderResult = await client.query("SELECT * FROM tbl_order WHERE id = $1 FOR UPDATE", [
+        order_id,
+      ]);
+      const order = orderResult.rows[0];
+
+      if (!order) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      if (order.payment_status === "Paid") {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ message: "Order is already paid" });
+      }
+
+      const orderTotal = Number(order.total_amount);
+      if (payAmount < orderTotal) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          message: `Payment amount must be at least ₱${orderTotal.toFixed(2)}`,
+        });
+      }
+
+      const ref =
+        reference_number?.trim() ||
+        `${payment_method.toUpperCase()}-${order.order_number}-${Date.now()}`;
+
+      const paymentResult = await client.query(
+        `INSERT INTO tbl_payment (order_id, payment_method, amount, reference_number, paid_at)
+         VALUES ($1, $2, $3, $4, NOW()) RETURNING *`,
+        [order_id, payment_method, payAmount, ref],
+      );
+
+      await client.query("UPDATE tbl_order SET payment_status = $1 WHERE id = $2", [
+        "Paid",
+        order_id,
+      ]);
+
+      const unpaidOnTable = await client.query(
+        `SELECT COUNT(*)::int AS count
+         FROM tbl_order
+         WHERE table_id = $1 AND payment_status != 'Paid' AND id != $2`,
+        [order.table_id, order_id],
+      );
+
+      if (unpaidOnTable.rows[0].count === 0) {
+        await client.query("UPDATE tbl_table SET status = $1 WHERE id = $2", [
+          "Available",
+          order.table_id,
+        ]);
+      }
+
+      await client.query("COMMIT");
+
+      return res.status(201).json({
+        message: "Payment recorded successfully",
+        data: paymentResult.rows[0],
+        order: { ...order, payment_status: "Paid" },
+      });
+    } catch (innerError) {
+      await client.query("ROLLBACK");
+      throw innerError;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Error processing payment:", error);
+    return res.status(500).json({ message: "Failed to process payment", error: error.message });
+  }
+};
+
 export const update_order_item_status = async (req, res) => {
   try {
     const { id } = req.params;

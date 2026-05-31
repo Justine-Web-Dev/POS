@@ -84,7 +84,7 @@ export const get_categories = async (req, res) => {
 export const get_menu_item = async (req, res) => {
   try {
     const query = await pool.query(
-      "SELECT menu.id AS menu_id, menu.category_id, menu.name, menu.description, menu.price, menu.stock, menu.image, menu.status, c.category_name, c.category_type FROM tbl_menu_item menu JOIN tbl_category c ON menu.category_id = c.id",
+      "SELECT menu.id AS menu_id, menu.category_id, menu.name, menu.description, menu.price, menu.stock, menu.image, menu.status, c.category_name, c.category_type FROM tbl_menu_item menu JOIN tbl_category c ON menu.category_id = c.id ORDER BY menu.id ASC",
     );
 
     res.json(query.rows);

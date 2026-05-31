@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import DashboardOverview from "./DashboardOverview";
 import UserManagement from "./UserManagement";
@@ -11,14 +11,17 @@ import Inventory from "../../components/Inventory";
 import SystemSettings from "./SystemSettings";
 
 function Dashboard() {
+  const { pathname } = useLocation();
+  const isPos = pathname.includes("/pos");
+
   return (
    <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
       <aside className="flex-shrink-0">
         <Sidebar />
       </aside>
 
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
+        <div className={`flex-1 min-h-0 overflow-hidden ${isPos ? "p-2" : "p-6"}`}>
           <Routes>
             <Route path="/" element={<DashboardOverview />} />
             <Route path="/user-management" element={<UserManagement />} />

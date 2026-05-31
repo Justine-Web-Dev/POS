@@ -12,12 +12,12 @@ function Sidebar() {
   };
 
   return (
-    <div className="w-64 h-screen bg-gray-900 text-gray-100 flex flex-col justify-between border-r border-gray-800 p-4">
+    <div className="w-56 max-[1366px]:w-52 h-screen bg-gray-900 text-gray-100 flex flex-col justify-between border-r border-gray-800 p-3 max-[1366px]:p-2.5">
       {/* Top Section: Brand/Logo & Navigation */}
       <div>
         {/* Logo/Brand Heading */}
-        <div className="mb-8 px-2">
-          <h2 className="text-xl font-bold tracking-wider text-white">
+        <div className="mb-6 max-[1366px]:mb-4 px-1 max-[1366px]:px-0">
+          <h2 className="text-lg max-[1366px]:text-base font-bold leading-snug tracking-wide text-white">
             NPA Pub & Restaurant
           </h2>
         </div>

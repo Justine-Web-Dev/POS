@@ -55,6 +55,12 @@ export const updateUser = async (req,res) =>{
         return res.status(400).json({message:"Manager is already exists"})
       }
     }
+    if(role.toLowerCase() === "administrator"){
+      const managerExists = await pool.query('SELECT id FROM tbl_user WHERE role = $1', [role])
+      if(managerExists.rows.length > 0){
+        return res.status(400).json({message:"Administrator is already exists"})
+      }
+    }
 
     if (result.rowCount === 0) {
       return res.status(404).json({ message: "User not found" })

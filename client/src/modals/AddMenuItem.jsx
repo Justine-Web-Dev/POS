@@ -156,14 +156,14 @@ function AddMenuItem({ isOpen, onClose, onSuccess }) {
             <input
               type="text"
               required
-              placeholder="e.g. Iced Latte"
+              placeholder="e.g. "
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-white border border-slate-200 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 transition-colors placeholder-slate-300 text-slate-800 shadow-xs"
             />
           </div>
 
-          {/* <div>
+          <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
               Description (optional)
             </label>
@@ -174,7 +174,7 @@ function AddMenuItem({ isOpen, onClose, onSuccess }) {
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-white border border-slate-200 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 transition-colors placeholder-slate-300 text-slate-800 shadow-xs resize-none"
             />
-          </div> */}
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
